@@ -1,0 +1,34 @@
+1 tomaattikastike
+2 juusto
+3 herkkusieni
+4 kinkku
+5 salami
+6 peperoni
+7 ananas
+8 tonnikala
+9 sipuli
+10 paprika
+11 parsakaali
+12 ekstra
+13 kokonaisia tomaatinsiivuja
+14 pinaatti
+15 kesakurpitsa
+16 maissi
+17 artisokka
+18 oliivi
+19 valkosipulimakkara
+20 jauheliha
+21 chili
+22 mozzarella
+23 tuoreita tomaatteja
+24 basilika
+25 tuoreita herkkusienia
+26 valkosipuli
+27 katkarapu
+28 kananliha
+29 emmental
+30 gouda
+31 gorgonzola
+32 simpukka
+33 mustekala
+34 herne
