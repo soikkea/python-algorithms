@@ -41,3 +41,40 @@ def hubs_and_authorities(matrix, limit=25, disp_iterations=False):
     df_out['Initial'] = 1.0 / np.sqrt(rows)
 
     return df_out
+
+
+def page_rank(matrix, epsilon=0.001, limit=50):
+    matrix_values = matrix.values
+    rows, columns = matrix_values.shape
+
+    ranks = np.zeros((rows, columns))
+
+    for s in range(rows):
+        for t in range(columns):
+            t_row_sum = matrix_values[t, :].sum()
+            # If t is connected to s:
+            if matrix_values[t, s] == 1:
+                ranks[s, t] = epsilon / float(rows)
+                if not np.isclose(t_row_sum, 0):
+                    ranks[s, t] = (1.0 - epsilon) / t_row_sum
+            elif np.isclose(t_row_sum, 0):
+                ranks[s, t] = 1.0 / float(rows)
+            else:
+                ranks[s, t] = epsilon / float(rows)
+
+    relevance = np.ones((rows, 1)) * (1.0 / float(rows))
+    old_relevance = relevance.copy()
+
+    final_ranks = np.zeros((rows, 1))
+
+    for i in range(limit):
+        for x in range(rows):
+            row_count = np.sum(ranks[x, :] * old_relevance.ravel())
+            relevance[x] = row_count
+            if i == limit - 1:
+                final_ranks[x] = relevance[x]
+        old_relevance = relevance.copy()
+    
+    df_out = pd.DataFrame(final_ranks, index=matrix.index, columns=['Rank'])
+
+    return df_out
