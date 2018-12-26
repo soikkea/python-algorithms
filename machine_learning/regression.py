@@ -1,10 +1,12 @@
 import numpy as np
 
-from machine_learning.utilities import add_constant
+from machine_learning.constants import FOLDS, MAX_K
+from machine_learning.utilities import (add_constant, get_k_nn, 
+    k_fold_split_indexes)
 
 
-def regression(method, error_func, train, test):
-    y_pred = method(train, test)
+def regression(method, error_func, train, test, **kwargs):
+    y_pred = method(train, test, **kwargs)
     return error_func(y_pred, test.y.values)
 
 
@@ -70,6 +72,60 @@ def backwards_feature_selection_regression(error_func, train, validate):
         assert len(w_opt[:-1]) < len(w_opt[:])
         features.pop(np.argmin(np.abs(w_opt[:-1])))        
     return min_error, best_set
+
+
+def k_nn_regression(train, test, k):
+    y_pred = k_nn_regression_predict(test.X, train.X, train.y, k)
+    return y_pred
+
+
+def k_nn_regression_fit(train, n_folds=FOLDS, max_k=MAX_K):
+    X = train.X.values
+    y = train.y.values
+    N = X.shape[0]
+    folds = k_fold_split_indexes(N, n_folds)
+    min_error = np.infty
+    best_k = 1
+    for k in range(1, max_k):
+        errors = np.zeros(n_folds)
+        for i in range(n_folds):
+            tmp_folds = folds[:]
+            valid_ix = tmp_folds.pop(i)
+            train_ix = np.concatenate(tmp_folds)
+            y_train = y[train_ix]
+            y_pred = k_nn_regression_predict(X[valid_ix, :], X[train_ix, :],
+                                             y_train, k)
+            mse = MSE(y_pred, y[valid_ix])
+            errors[i] = (valid_ix.size * mse)
+        mean_error = np.sum(errors) / N
+        if mean_error < min_error:
+            min_error = mean_error
+            best_k = k
+    return int(best_k), min_error
+
+
+def k_nn_regression_predict(X, X_train, y_train, k):
+    try:
+        X = X.values
+    except AttributeError:
+        pass
+    try:
+        X_train = X.values
+    except AttributeError:
+        pass
+    try:
+        y_train = y_train.values
+    except AttributeError:
+        pass
+    N = X.shape[0]
+    y_train.reshape((-1, 1))
+    y_pred = np.zeros((N, 1))
+    for i in range(N):
+        neighbors, dists = get_k_nn(X[i, :], X_train, k)
+        # Add machine epsilon to avoid division by zero
+        inv_dists = (1.0 / (dists + np.finfo(np.float).eps)).ravel()
+        y_pred[i] = np.sum(inv_dists * y_train[neighbors]) / np.sum(inv_dists)
+    return y_pred
 
 
 def MSE(y_pred, y_true):
