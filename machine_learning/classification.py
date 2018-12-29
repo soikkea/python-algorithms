@@ -1,6 +1,7 @@
 import numpy as np
 
-from machine_learning.constants import N_CLASSES
+from machine_learning.constants import N_CLASSES, FOLDS, MAX_K, RANDOM_SEED
+from machine_learning.utilities import k_fold_split_indexes, get_k_nn
 
 
 def classification(method, error_func, train, test, **kwargs):
@@ -76,6 +77,67 @@ def mnb_likelihood(x, p_ij):
     assert dprod.size == p_ij.size
     likelihoods = np.sum(dprod, axis=1)
     return likelihoods
+
+
+def k_nn_classifier(train, test, k):
+    y_pred = k_nn_classifier_predict(test.X, train.X, train.y, k)
+    return y_pred
+
+
+def k_nn_classifier_fit(train, n_folds=FOLDS, max_k=MAX_K):
+    # TODO: combine with k_nn_regression_fit()?
+    X = train.X.values
+    y = train.y.values
+    N = X.shape[0]
+    folds = k_fold_split_indexes(N, n_folds)
+    min_error = np.infty
+    best_k = 1
+    for k in range(1, max_k):
+        errors = np.zeros(n_folds)
+        for i in range(n_folds):
+            tmp_folds = folds[:]
+            valid_ix = tmp_folds.pop(i)
+            train_ix = np.concatenate(tmp_folds)
+            y_pred = k_nn_classifier_predict(X[valid_ix, :], X[train_ix, :],
+                                             y[train_ix], k)
+            error = classification_error(y_pred, y[valid_ix])
+            errors[i] = (valid_ix.size * error)
+        mean_error = np.sum(errors) / N
+        if mean_error < min_error:
+            min_error = mean_error
+            best_k = k
+    return int(best_k), min_error
+
+
+def k_nn_classifier_predict(X, X_train, y_train, k, n_classes=N_CLASSES):
+    try:
+        X = X.values
+    except AttributeError:
+        pass
+    try:
+        X_train = X_train.values
+    except AttributeError:
+        pass
+    try:
+        y_train = y_train.values
+    except AttributeError:
+        pass
+    assert X.shape[1] == X_train.shape[1]
+    N = X.shape[0]
+    y_pred = np.zeros((N, 1))
+    for i in range(N):
+        point = X[i, :]
+        neighbors, _ = get_k_nn(point, X_train, k)
+        train_labels = y_train[neighbors]
+        class_sums = [np.sum(train_labels == i) for i in range(n_classes)]
+        y_pred[i] = k_nn_assign_label(class_sums)
+    return y_pred
+
+
+def k_nn_assign_label(class_sums):
+    order = np.argsort(class_sums)[::-1]
+    candidates = [x for x in order if x == order[0]]
+    return np.random.RandomState(RANDOM_SEED).choice(candidates)
 
 
 def classification_error(y_pred, y_true):
