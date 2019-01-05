@@ -1,3 +1,5 @@
+"""Loads example data."""
+
 import pandas as pd
 
 from machine_learning.utilities import DataTuple

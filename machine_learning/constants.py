@@ -1,3 +1,5 @@
+"""Constant values for configuration."""
+
 # Random seed
 RANDOM_SEED = 4
 # Maximum number of nearest neighbours
